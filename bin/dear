@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+
+# Variables ####################################################################
+
+declare -r SCRIPT_NAME="${0##*/}"
+
+# Not yet supported
+# This is where we'll add libraries that extend the default journal features,
+# such as to enable a bullet journal UX
+declare -r DEAR_JOURNAL_LIB_DIR="${DEAR_JOURNAL_LIB_DIR:-${HOME}/.local/lib/dear}"
+
+declare -r CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+declare -r DEAR_JOURNAL_CONFIG_HOME="${CONFIG_HOME%/}/dear"
+declare DEAR_JOURNAL_DIR
+
+# Not yet supported
+# This will be useful for journals that allow multiple types of entry logging
+# Thinking here again of UXes like bullet journals
+declare DEAR_JOURNAL_NAMESPACE="${DEAR_JOURNAL_NAMESPACE:+${DEAR_JOURNAL_NAMESPACE%/}/}"
+
+# Script settings
+declare -i DEAR_JOURNAL_USE_FZF="${DEAR_JOURNAL_USE_FZF:-1}"
+
+# TFM ##########################################################################
+
+usage() {
+    cat <<EOF
+NAME
+    $SCRIPT_NAME - an encrypted, extensible journaling experience powered by
+    Unix password-store
+
+SYNOPSIS
+    $SCRIPT_NAME JOURNAL create|init [KEY_ID]
+    $SCRIPT_NAME JOURNAL new [-d DATE]
+    $SCRIPT_NAME JOURNAL edit PATH
+    $SCRIPT_NAME bookshelf
+
+DESCRIPTION
+    Parameters:
+
+    JOURNAL
+        The name of the journal to open for the command
+
+    OPTIONS
+        Any options consumed by COMMAND
+
+
+    Available commands:
+
+    create|init
+        Creates a new journal with name NAME using the GPG key with KEY_ID
+
+    new
+        Creates a new journal entry for DATE
+        If DATE is not specified, defaults to today's date
+
+    edit
+        Opens the entry at PATH for editing
+        Note that this command does NOT behave like the equivalent pass command
+        If the entry does not exist, the command will fail
+        To create a new entry, use the 'new' command
+
+    Environment variables:
+
+    DEAR_JOURNAL_DIR
+        Defines the directory where Git profiles are stored.
+        Defaults to \${CONFIG_HOME}/.git/profiles, where \${CONFIG_HOME} is
+        equal to \${XDG_CONFIG_HOME} when set, otherwise \${HOME}/.config.
+
+EOF
+}
+
+# Private functions ############################################################
+
+exec_pass() {
+    PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" pass "$@"
+}
+
+# Built-in Commands ############################################################
+
+cmd_create() {
+    exec_pass init "$@"
+}
+
+cmd_new() {
+    local -r entry_path="$1"
+
+    local -ri entry_count=$(find "${DEAR_JOURNAL_DIR}/${entry_path%/}/" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | wc -l)
+    local -ri next_entry=$((entry_count + 1))
+
+    exec_pass edit "${entry_path}/${next_entry}" &&
+        return
+
+    echo "Journal entry was not saved."
+    return 1
+}
+
+cmd_edit() {
+    local -r entry_fqp="$1"
+
+    [ -f "$entry_fqp" ] &&
+        exec_pass edit "${entry_fqp}" &&
+        return
+
+    echo "No such journal entry"
+    echo "Try '$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new' if you meant to create a new entry"
+    return 1
+}
+
+cmd_ls() {
+    local -r entry_path="$1"
+    local tree_header="${2:-${DEAR_JOURNAL_DIR##*/}}"
+
+    IFS='/' read -ra segments <<<"$entry_path"
+
+    local -i num_indents
+
+    case "${#segments[@]}" in
+    0)
+        num_indents=3
+        ;;
+    1)
+        tree_header=$(date --date="${segments[0]}/01/01" '+%Y' 2>/dev/null) &&
+            num_indents=2 ||
+            tree_header="$entry_path"
+        ;;
+    2)
+        tree_header=$(date --date="${segments[0]}/${segments[1]}/01" '+%B %Y' 2>/dev/null) &&
+            num_indents=1 ||
+            tree_header="$entry_path"
+        ;;
+    3)
+        tree_header=$(date --date="${segments[0]}/${segments[1]}/${segments[2]}" '+%x' 2>/dev/null) &&
+            num_indents=0 ||
+            tree_header="$entry_path"
+        ;;
+    *)
+        tree_header="$entry_path"
+        ;;
+    esac
+
+    [ -x "${DEAR_JOURNAL_DIR}/${entry_path}" ] &&
+        echo "$tree_header"
+
+    local -i num_day_entries=0
+    local last_entry_line
+    # Preserve leading whitespace in the `tree` output
+    local IFS=''
+
+    # Run the tree command provided by pass, but rather than show entry
+    # file names (since they're not really meaningful from a user perspective),
+    # simply show the total entry count per day
+    while read -r line; do
+        if grep -P "^(?:(?:\s|│)\s{3}){${num_indents}}" <<<"$line" >/dev/null; then
+            num_day_entries=$((num_day_entries + 1))
+            last_entry_line="$line"
+        elif [[ $num_day_entries -eq 1 ]]; then
+            printf '%s %d entry\n' "${last_entry_line% *}" "$num_day_entries"
+        elif [[ $num_day_entries -gt 0 ]]; then
+            printf '%s %d entries\n' "${last_entry_line% *}" "$num_day_entries"
+            num_day_entries=0
+            unset last_entry_line
+            printf '%s\n' "$line"
+        else
+            printf '%s\n' "$line"
+        fi
+    done <<<"$(exec_pass 'ls' "$@" | tail -n+2)"
+
+    # If our last directory contains entries, we will not have already emitted
+    # output to indicate this, so we check one last time to determine whether we
+    # were in the middle of counting entries in a directory
+    if [[ $num_day_entries -eq 1 ]]; then
+        printf '%s %d entry\n' "${last_entry_line% *}" "$num_day_entries"
+    elif [[ $num_day_entries -gt 0 ]]; then
+        printf '%s %d entries\n' "${last_entry_line% *}" "$num_day_entries"
+    fi
+}
+
+cmd_grep() {
+    exec_pass 'grep' "$@"
+}
+
+cmd_bookshelf() {
+    echo "Your Bookshelf"
+    tree -nClL1 --noreport "${DEAR_JOURNAL_CONFIG_HOME}" | tail -n+2
+}
+
+# Main loop ####################################################################
+
+# We're not parsing a regex just matching against an arg
+# shellcheck disable=SC2076
+[[ ! ' bookshelf help ' =~ " $1 " ]] &&
+    DEAR_JOURNAL_DIR="${DEAR_JOURNAL_CONFIG_HOME}/${1}" &&
+    shift
+
+declare cmd="$1" &&
+    shift ||
+    cmd='help'
+
+case "$cmd" in
+'create' | 'init')
+    cmd_create "$@"
+    ;;
+'new')
+    declare -r datestamp="${2:-today}"
+    read -r year month day <<<"$(date --date="$datestamp" '+%Y %m %d')"
+    cmd_new "${year}/${month}/${day}"
+    ;;
+'edit')
+    cmd_edit "$1"
+    ;;
+'ls')
+    cmd_ls "$@"
+    ;;
+'grep')
+    cmd_grep "$@"
+    ;;
+'bookshelf')
+    cmd_bookshelf
+    ;;
+'help')
+    usage
+    exit 0
+    ;;
+*)
+    CMD_SCRIPT="${DEAR_JOURNAL_LIB_DIR%/}/cmd-${cmd}.sh"
+    [ -r "$CMD_SCRIPT" ] && . "$CMD_SCRIPT"
+    echo "Unknown command $1"
+    ;;
+esac
