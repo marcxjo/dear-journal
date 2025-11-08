@@ -4,16 +4,21 @@
 
 declare -r SCRIPT_NAME="${0##*/}"
 
-# Not yet supported
+# TODO: Not yet supported
 # This is where we'll add libraries that extend the default journal features,
 # such as to enable a bullet journal UX
 declare -r DEAR_JOURNAL_LIB_DIR="${DEAR_JOURNAL_LIB_DIR:-${HOME}/.local/lib/dear}"
 
-declare -r CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
-declare -r DEAR_JOURNAL_CONFIG_HOME="${CONFIG_HOME%/}/dear"
+declare CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+
+# The directory where all journals managed by `dear` are stored
+declare -r DEAR_JOURNAL_SHELF_DIR="${DEAR_JOURNAL_SHELF_DIR:-${CONFIG_HOME%/}/dear}"
+
+unset CONFIG_HOME
+
 declare DEAR_JOURNAL_DIR
 
-# Not yet supported
+# TODO: Not yet supported
 # This will be useful for journals that allow multiple types of entry logging
 # Thinking here again of UXes like bullet journals
 declare DEAR_JOURNAL_NAMESPACE="${DEAR_JOURNAL_NAMESPACE:+${DEAR_JOURNAL_NAMESPACE%/}/}"
@@ -201,7 +206,7 @@ cmd_grep() {
 
 cmd_shelf() {
     echo "Your Shelf"
-    tree -nClL1 --noreport "${DEAR_JOURNAL_CONFIG_HOME}" | tail -n+2
+    tree -nClL1 --noreport "${DEAR_JOURNAL_SHELF_DIR}" | tail -n+2
 }
 
 # Main loop ####################################################################
@@ -209,7 +214,7 @@ cmd_shelf() {
 # We're not parsing a regex just matching against an arg
 # shellcheck disable=SC2076
 [[ ! ' shelf help ' =~ " $1 " ]] &&
-    DEAR_JOURNAL_DIR="${DEAR_JOURNAL_CONFIG_HOME}/${1}" &&
+    DEAR_JOURNAL_DIR="${DEAR_JOURNAL_SHELF_DIR}/${1}" &&
     shift
 
 declare cmd="$1" &&
