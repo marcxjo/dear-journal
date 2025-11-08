@@ -247,8 +247,7 @@ case "$cmd" in
     exit 0
     ;;
 *)
-    CMD_SCRIPT="${DEAR_JOURNAL_LIB_DIR%/}/cmd-${cmd}.sh"
-    [ -r "$CMD_SCRIPT" ] && . "$CMD_SCRIPT"
+    # TODO: extension command support
     echo "Unknown command $1"
     ;;
 esac
