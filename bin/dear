@@ -38,7 +38,7 @@ SYNOPSIS
     $SCRIPT_NAME shelf
     $SCRIPT_NAME help
 
-    $SCRIPT_NAME JOURNAL create|init [KEY_ID]
+    $SCRIPT_NAME JOURNAL create|init KEY_ID
     $SCRIPT_NAME JOURNAL new [-d DATE]
     $SCRIPT_NAME JOURNAL edit PATH
     $SCRIPT_NAME JOURNAL ls [PATH]
@@ -103,7 +103,12 @@ exec_pass() {
 # Built-in Commands ############################################################
 
 cmd_create() {
-    exec_pass init "$@"
+    exec_pass init "$@" 2>/dev/null &&
+        return
+
+    echo "Error: journal was not created."
+    echo "       See \`$SCRIPT_NAME JOURNAL create KEY_ID\` to create a new journal."
+    echo "       See \`$SCRIPT_NAME help\` for additional information."
 }
 
 cmd_new() {
@@ -112,7 +117,7 @@ cmd_new() {
     local -ri entry_count=$(find "${DEAR_JOURNAL_DIR}/${entry_path%/}/" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | wc -l)
     local -ri next_entry=$((entry_count + 1))
 
-    exec_pass edit "${entry_path}/${next_entry}" &&
+    exec_pass edit "${entry_path}/${next_entry}" 2>/dev/null &&
         return
 
     echo "Journal entry was not saved."
@@ -126,8 +131,9 @@ cmd_edit() {
         exec_pass edit "${entry_fqp}" &&
         return
 
-    echo "No such journal entry"
-    echo "Try '$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new' if you meant to create a new entry"
+    echo "Error: journal contains no entries for ${entry_fqp}."
+    echo "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
+    echo "       See \`$SCRIPT_NAME help\` for additional information."
     return 1
 }
 
@@ -215,7 +221,7 @@ cmd_shelf() {
 
 # Main loop ####################################################################
 
-# We're not parsing a regex just matching against an arg
+# We're not parsing a regex, just matching against an arg
 # shellcheck disable=SC2076
 [[ ! ' shelf help ' =~ " $1 " ]] &&
     DEAR_JOURNAL_DIR="${DEAR_JOURNAL_SHELF_DIR}/${1}" &&
