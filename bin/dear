@@ -44,15 +44,6 @@ SYNOPSIS
     $SCRIPT_NAME JOURNAL ls [PATH]
 
 DESCRIPTION
-    Parameters:
-
-    JOURNAL
-        The name of the journal to open for the command
-
-    OPTIONS
-        Any options consumed by COMMAND
-
-
     Global commands:
 
     shelf
