@@ -33,7 +33,7 @@ SYNOPSIS
     $SCRIPT_NAME JOURNAL create|init [KEY_ID]
     $SCRIPT_NAME JOURNAL new [-d DATE]
     $SCRIPT_NAME JOURNAL edit PATH
-    $SCRIPT_NAME bookshelf
+    $SCRIPT_NAME shelf
 
 DESCRIPTION
     Parameters:
@@ -180,8 +180,8 @@ cmd_grep() {
     exec_pass 'grep' "$@"
 }
 
-cmd_bookshelf() {
-    echo "Your Bookshelf"
+cmd_shelf() {
+    echo "Your Shelf"
     tree -nClL1 --noreport "${DEAR_JOURNAL_CONFIG_HOME}" | tail -n+2
 }
 
@@ -189,7 +189,7 @@ cmd_bookshelf() {
 
 # We're not parsing a regex just matching against an arg
 # shellcheck disable=SC2076
-[[ ! ' bookshelf help ' =~ " $1 " ]] &&
+[[ ! ' shelf help ' =~ " $1 " ]] &&
     DEAR_JOURNAL_DIR="${DEAR_JOURNAL_CONFIG_HOME}/${1}" &&
     shift
 
@@ -215,8 +215,8 @@ case "$cmd" in
 'grep')
     cmd_grep "$@"
     ;;
-'bookshelf')
-    cmd_bookshelf
+'shelf')
+    cmd_shelf
     ;;
 'help')
     usage
