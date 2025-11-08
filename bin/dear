@@ -163,8 +163,12 @@ cmd_ls() {
         ;;
     esac
 
-    [ -x "${DEAR_JOURNAL_DIR}/${entry_path}" ] &&
+    if [ -x "${DEAR_JOURNAL_DIR}/${entry_path}" ]; then
         echo "$tree_header"
+    else
+        echo "Error: journal contains no entries for ${entry_path}."
+        return 1
+    fi
 
     local -i num_day_entries=0
     local last_entry_line
