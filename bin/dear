@@ -78,7 +78,7 @@ DESCRIPTION
     Environment variables:
 
     DEAR_JOURNAL_SHELF_DIR
-        The directory where all journal managed by $SCRIPT_NAME are stored
+        The directory where all journals managed by $SCRIPT_NAME are stored
         Defaults to \${CONFIG_HOME}/dear, where \${CONFIG_HOME} is equal to
         \${XDG_CONFIG_HOME} when set, otherwise \${HOME}/.config
 
