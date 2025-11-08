@@ -30,10 +30,13 @@ NAME
     Unix password-store
 
 SYNOPSIS
+    $SCRIPT_NAME shelf
+    $SCRIPT_NAME help
+
     $SCRIPT_NAME JOURNAL create|init [KEY_ID]
     $SCRIPT_NAME JOURNAL new [-d DATE]
     $SCRIPT_NAME JOURNAL edit PATH
-    $SCRIPT_NAME shelf
+    $SCRIPT_NAME JOURNAL ls [PATH]
 
 DESCRIPTION
     Parameters:
@@ -45,7 +48,18 @@ DESCRIPTION
         Any options consumed by COMMAND
 
 
-    Available commands:
+    Global commands:
+
+    shelf
+        Shows the current collection of journals managed by $SCRIPT_NAME
+
+    help
+        Displays this help message
+
+
+    JOURNAL commands:
+
+    Commands which operate on a specific journal within your shelf
 
     create|init
         Creates a new journal with name NAME using the GPG key with KEY_ID
@@ -60,12 +74,17 @@ DESCRIPTION
         If the entry does not exist, the command will fail
         To create a new entry, use the 'new' command
 
+    ls
+        Shows the contents of PATH within JOURNAL, or the full contents of
+        JOURNAL if PATH is not specified
+
+
     Environment variables:
 
-    DEAR_JOURNAL_DIR
-        Defines the directory where Git profiles are stored.
-        Defaults to \${CONFIG_HOME}/.git/profiles, where \${CONFIG_HOME} is
-        equal to \${XDG_CONFIG_HOME} when set, otherwise \${HOME}/.config.
+    DEAR_JOURNAL_SHELF_DIR
+        The directory where all journal managed by $SCRIPT_NAME are stored
+        Defaults to \${CONFIG_HOME}/dear, where \${CONFIG_HOME} is equal to
+        \${XDG_CONFIG_HOME} when set, otherwise \${HOME}/.config
 
 EOF
 }
