@@ -100,15 +100,21 @@ exec_pass() {
     PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" pass "$@"
 }
 
+echo_err() {
+    echo "$@" >&2
+}
+
 # Built-in Commands ############################################################
 
 cmd_create() {
     exec_pass init "$@" 2>/dev/null &&
         return
 
-    echo "Error: journal was not created."
-    echo "       See \`$SCRIPT_NAME JOURNAL create KEY_ID\` to create a new journal."
-    echo "       See \`$SCRIPT_NAME help\` for additional information."
+    echo_err "Error: journal was not created."
+    echo_err "       See \`$SCRIPT_NAME JOURNAL create KEY_ID\` to create a new journal."
+    echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+
+    return 1
 }
 
 cmd_new() {
@@ -120,7 +126,8 @@ cmd_new() {
     exec_pass edit "${entry_path}/${next_entry}" 2>/dev/null &&
         return
 
-    echo "Journal entry was not saved."
+    echo_err "Journal entry was not saved."
+
     return 1
 }
 
@@ -131,9 +138,10 @@ cmd_edit() {
         exec_pass edit "${entry_fqp}" &&
         return
 
-    echo "Error: journal contains no entries for ${entry_fqp}."
-    echo "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
-    echo "       See \`$SCRIPT_NAME help\` for additional information."
+    echo_err "Error: journal contains no entries for ${entry_fqp}."
+    echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
+    echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+
     return 1
 }
 
@@ -172,7 +180,8 @@ cmd_ls() {
     if [ -x "${DEAR_JOURNAL_DIR}/${entry_path}" ]; then
         echo "$tree_header"
     else
-        echo "Error: journal contains no entries for ${entry_path}."
+        echo_err "Error: journal contains no entries for ${entry_path}."
+
         return 1
     fi
 
@@ -258,6 +267,7 @@ case "$cmd" in
     ;;
 *)
     # TODO: extension command support
-    echo "Unknown command $1"
+    echo_err "Unknown command $1"
+    exit 1
     ;;
 esac
