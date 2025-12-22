@@ -101,8 +101,9 @@ echo_err() {
 # Built-in Commands ############################################################
 
 cmd_create() {
-    exec_pass init "$@" 2>/dev/null &&
+    if exec_pass init "$@" 2>/dev/null; then
         return
+    fi
 
     echo_err "Error: journal was not created."
     echo_err "       See \`$SCRIPT_NAME JOURNAL create KEY_ID\` to create a new journal."
@@ -123,9 +124,10 @@ cmd_new() {
 cmd_edit() {
     local -r entry_fqp="$1"
 
-    [ -f "$entry_fqp" ] &&
-        exec_pass edit "${entry_fqp}" &&
+    if [ -f "$entry_fqp" ]; then
+        exec_pass edit "${entry_fqp}"
         return
+    fi
 
     echo_err "Error: journal contains no entries for ${entry_fqp}."
     echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
