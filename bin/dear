@@ -9,6 +9,9 @@ declare -r SCRIPT_NAME="${0##*/}"
 # such as to enable a bullet journal UX
 declare -r DEAR_JOURNAL_LIB_DIR="${DEAR_JOURNAL_LIB_DIR:-${HOME}/.local/lib/dear}"
 
+# shellcheck source=../lib/core.sh
+[ -f "${DEAR_JOURNAL_LIB_DIR}/core.sh" ] && . "${DEAR_JOURNAL_LIB_DIR}/core.sh"
+
 declare CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
 
 # The directory where all journals managed by `dear` are stored
