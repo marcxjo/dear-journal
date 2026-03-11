@@ -90,10 +90,6 @@ EOF
 
 # Private functions ############################################################
 
-exec_pass() {
-    PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" pass "$@"
-}
-
 echo_err() {
     echo "$@" >&2
 }
@@ -101,7 +97,7 @@ echo_err() {
 # Built-in Commands ############################################################
 
 cmd_create() {
-    if exec_pass init "$@" 2>/dev/null; then
+    if dear_core_pass_init "$@"; then
         return
     fi
 
@@ -118,20 +114,23 @@ cmd_new() {
     local -ri entry_count=$(find "${DEAR_JOURNAL_DIR}/${entry_path%/}/" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | wc -l)
     local -ri next_entry=$((entry_count + 1))
 
-    dear_core_edit "${entry_path}/${next_entry}"
+    dear_core_pass_edit "${entry_path}/${next_entry}"
 }
 
 cmd_edit() {
     local -r entry_fqp="$1"
 
-    if [ -f "$entry_fqp" ]; then
-        exec_pass edit "${entry_fqp}"
+    if [ ! -f "$entry_fqp" ]; then
+        echo_err "Error: journal contains no entries for ${entry_fqp}."
+        echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
+        echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+    fi
+
+    if dear_core_pass_edit "${entry_fqp}"; then
         return
     fi
 
-    echo_err "Error: journal contains no entries for ${entry_fqp}."
-    echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
-    echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+    echo_err "Journal entry was not saved."
 
     return 1
 }
@@ -168,50 +167,17 @@ cmd_ls() {
         ;;
     esac
 
-    if [ -x "${DEAR_JOURNAL_DIR}/${entry_path}" ]; then
-        echo "$tree_header"
-    else
+    if [ ! -x "${DEAR_JOURNAL_DIR}/${entry_path}" ]; then
         echo_err "Error: journal contains no entries for ${entry_path}."
 
         return 1
     fi
 
-    local -i num_day_entries=0
-    local last_entry_line
-    # Preserve leading whitespace in the `tree` output
-    local IFS=''
-
-    # Run the tree command provided by pass, but rather than show entry
-    # file names (since they're not really meaningful from a user perspective),
-    # simply show the total entry count per day
-    while read -r line; do
-        if grep -P "^(?:(?:\s|│)\s{3}){${num_indents}}" <<<"$line" >/dev/null; then
-            num_day_entries=$((num_day_entries + 1))
-            last_entry_line="$line"
-        elif [[ $num_day_entries -eq 1 ]]; then
-            printf '%s %d entry\n' "${last_entry_line% *}" "$num_day_entries"
-        elif [[ $num_day_entries -gt 0 ]]; then
-            printf '%s %d entries\n' "${last_entry_line% *}" "$num_day_entries"
-            num_day_entries=0
-            unset last_entry_line
-            printf '%s\n' "$line"
-        else
-            printf '%s\n' "$line"
-        fi
-    done <<<"$(exec_pass 'ls' "$@" | tail -n+2)"
-
-    # If our last directory contains entries, we will not have already emitted
-    # output to indicate this, so we check one last time to determine whether we
-    # were in the middle of counting entries in a directory
-    if [[ $num_day_entries -eq 1 ]]; then
-        printf '%s %d entry\n' "${last_entry_line% *}" "$num_day_entries"
-    elif [[ $num_day_entries -gt 0 ]]; then
-        printf '%s %d entries\n' "${last_entry_line% *}" "$num_day_entries"
-    fi
+    dear_core_pass_ls "$entry_path" "$tree_header" $num_indents
 }
 
 cmd_grep() {
-    exec_pass 'grep' "$@"
+    dear_core_pass_grep "$@"
 }
 
 cmd_shelf() {
