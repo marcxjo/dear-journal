@@ -136,8 +136,16 @@ cmd_create() {
 }
 
 cmd_new() {
-    local -r entry_path="$1"
+    local -r datestamp="${1:-today}"
 
+    if ! read -r year month day < <(date --date="$datestamp" '+%Y %m %d' 2>/dev/null); then
+        echo_err "Error: a valid date was not specified"
+        echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` for formatting requirements."
+        echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+        exit 1
+    fi
+
+    local -r entry_path="${year}/${month}/${day}"
     local -ri entry_count=$(find "${DEAR_JOURNAL_DIR}/${entry_path%/}/" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | wc -l)
     local -ri next_entry=$((entry_count + 1))
 
@@ -243,9 +251,8 @@ case "$cmd" in
     cmd_create "$@"
     ;;
 'new')
-    declare -r datestamp="${2:-today}"
-    read -r year month day <<<"$(date --date="$datestamp" '+%Y %m %d')"
-    cmd_new "${year}/${month}/${day}"
+
+    cmd_new "$1"
     ;;
 'edit')
     cmd_edit "$1"
