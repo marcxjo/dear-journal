@@ -149,7 +149,10 @@ cmd_new() {
     local -ri entry_count=$(find "${DEAR_JOURNAL_DIR}/${entry_path%/}/" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | wc -l)
     local -ri next_entry=$((entry_count + 1))
 
-    dear_core_pass_edit "${entry_path}/${next_entry}"
+    if ! dear_core_pass_edit "${entry_path}/${next_entry}"; then
+        echo_err "Error: Journal entry was not saved."
+        return 1
+    fi
 }
 
 cmd_edit() {
