@@ -145,21 +145,26 @@ cmd_new() {
 }
 
 cmd_edit() {
+    if [ ${#@} -eq 0 ]; then
+        echo_err "Error: No journal entry specified."
+        echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
+        echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+        return 1
+    fi
+
     local -r entry_fqp="$1"
 
-    if [ ! -f "$entry_fqp" ]; then
+    if [ ! -f "${DEAR_JOURNAL_DIR}/${entry_fqp}.gpg" ]; then
         echo_err "Error: journal contains no entries for ${entry_fqp}."
         echo_err "       See \`$SCRIPT_NAME ${DEAR_JOURNAL_DIR##*/} new\` if you meant to create a new entry."
         echo_err "       See \`$SCRIPT_NAME help\` for additional information."
+        return 1
     fi
 
-    if dear_core_pass_edit "${entry_fqp}"; then
-        return
+    if ! dear_core_pass_edit "${entry_fqp}"; then
+        echo_err "Error: Journal entry was not saved."
+        return 1
     fi
-
-    echo_err "Journal entry was not saved."
-
-    return 1
 }
 
 cmd_ls() {
