@@ -44,7 +44,7 @@ SYNOPSIS
     $SCRIPT_NAME JOURNAL create|init KEY_ID
     $SCRIPT_NAME JOURNAL new [-d DATE]
     $SCRIPT_NAME JOURNAL edit PATH
-    $SCRIPT_NAME JOURNAL ls [PATH]
+    $SCRIPT_NAME JOURNAL [ls [PATH]]
 
 DESCRIPTION
     Global commands:
@@ -76,6 +76,8 @@ DESCRIPTION
     ls
         Shows the contents of PATH within JOURNAL, or the full contents of
         JOURNAL if PATH is not specified
+        This command will also be run if no arguments following JOURNAL are
+        specified
 
 
     Environment variables:
@@ -193,9 +195,12 @@ cmd_shelf() {
     DEAR_JOURNAL_DIR="${DEAR_JOURNAL_SHELF_DIR}/${1}" &&
     shift
 
-declare cmd="$1" &&
-    shift ||
-    cmd='help'
+declare cmd="$1"
+
+if ! shift; then
+    cmd_ls
+    exit 0
+fi
 
 case "$cmd" in
 'create' | 'init')
