@@ -21,8 +21,14 @@ dear_core_private_pass_ls_to_depth() {
 
   echo "$tree_header"
 
+  # Counts the entries under a given directory at summarizing depth
   local -i summarized_count=0
-  local last_summary_line
+  # Captures the substring containing the "branch" glyphs for the summary line
+  # we print for max-depth directories
+  local summary_branch_str
+  # Captures indent levels to determine the nesting depth indicated by a line of
+  # `tree` output
+  local -a dir_depths=()
 
   # Preserve leading whitespace in the `tree` output
   local IFS=''
@@ -31,20 +37,43 @@ dear_core_private_pass_ls_to_depth() {
   # file names (since they're not really meaningful from a user perspective),
   # simply show the total entry count per day
   while read -r line; do
-    if grep -P "^(?:(?:\s|│)\s{3}){${max_dir_depth}}" <<<"$line" >/dev/null; then
+    # Truncating the line starting at the first alphanumeric yields the branch
+    # string and any leading whitespace
+    indentation="${line%%[[:alnum:]]*}"
+
+    # Disable warning about quotes on array entries that we know are integers
+    # shellcheck disable=SC2086
+    if [[ ${#dir_depths[@]} -eq 0 ]]; then
+      # Capture the indentation of the first line
+      dir_depths+=(${#indentation})
+    elif [[ ${#dir_depths[@]} -gt 0 ]] &&
+      [[ ${#dir_depths[@]} -lt ${max_dir_depth} ]] &&
+      [[ ${#indentation} -gt ${dir_depths[$((${#dir_depths[@]} - 1))]} ]]; then
+      # We've just traversed a new nesting depth for the first time
+      dir_depths+=(${#indentation})
+    fi
+
+    # shellcheck disable=SC2086
+    if [[ ${#dir_depths[@]} -ge ${max_dir_depth} ]] &&
+      [[ ${#indentation} -gt ${dir_depths[$((max_dir_depth - 1))]} ]]; then
+      # The current line represents the first entry nested low enough to start a
+      # summary line
       summarized_count=$((summarized_count + 1))
-      last_summary_line="$line"
+      summary_branch_str="${indentation% *}"
     elif [[ $summarized_count -eq 1 ]]; then
-      printf '%s %d %s\n' "${last_summary_line% *}" "$summarized_count" "$summary_descriptor_singular"
+      # We have escaped summary depth, having found one nested item
+      printf '%s %d %s\n' "${summary_branch_str}" "$summarized_count" "$summary_descriptor_singular"
       summarized_count=0
-      unset last_summary_line
+      unset summary_branch_str
       printf '%s\n' "$line"
     elif [[ $summarized_count -gt 0 ]]; then
-      printf '%s %d %s\n' "${last_summary_line% *}" "$summarized_count" "$summary_descriptor_plural"
+      # We have escaped summary depth, having found multiple nested items
+      printf '%s %d %s\n' "${summary_branch_str}" "$summarized_count" "$summary_descriptor_plural"
       summarized_count=0
-      unset last_summary_line
+      unset summary_branch_str
       printf '%s\n' "$line"
     else
+      # We're on an item above summarizing depth
       printf '%s\n' "$line"
     fi
   done <<<"$(dear_core_private_pass 'ls' "$entry_path" | tail -n+2)"
@@ -53,9 +82,9 @@ dear_core_private_pass_ls_to_depth() {
   # output to indicate this, so we check one last time to determine whether we
   # were in the middle of counting entries in a directory
   if [[ $summarized_count -eq 1 ]]; then
-    printf '%s %d %s\n' "${last_summary_line% *}" "$summarized_count" "$summary_descriptor_singular"
+    printf '%s %d %s\n' "${summary_branch_str}" "$summarized_count" "$summary_descriptor_singular"
   elif [[ $summarized_count -gt 0 ]]; then
-    printf '%s %d %s\n' "${last_summary_line% *}" "$summarized_count" "$summary_descriptor_plural"
+    printf '%s %d %s\n' "${summary_branch_str}" "$summarized_count" "$summary_descriptor_plural"
   fi
 }
 
