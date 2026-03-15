@@ -219,6 +219,11 @@ cmd_shelf() {
 
 # Main loop ####################################################################
 
+if [ ${#@} -eq 0 ]; then
+    cmd_shelf
+    exit 0
+fi
+
 # We're not parsing a regex, just matching against an arg
 # shellcheck disable=SC2076
 [[ ! ' shelf help ' =~ " $1 " ]] &&
