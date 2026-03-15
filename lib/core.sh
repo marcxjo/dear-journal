@@ -8,6 +8,15 @@ HAS_LIBDEAR_CORE=1
 
 # Private functions ############################################################
 
+dear_core_private_tree() {
+  local -r root_dir="$1"
+  local -i depth
+
+  [[ $2 -gt 0 ]] && depth=$2
+
+  "$TREE_CMD" -N -C -l "${depth:+-L}" ${depth} --noreport "$root_dir" | tail -n+2
+}
+
 dear_core_private_pass() {
   PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" pass "$@"
 }
@@ -109,7 +118,7 @@ dear_core_pass_ls() {
   local -r tree_header="$2"
   local -ri num_indents=$3
 
-  dear_core_private_pass_ls_to_depth "$entry_path" "$tree_header" "$num_indents" 'entry' 'entries'
+  dear_core_private_pass_ls_to_depth "$entry_path" "$tree_header" $num_indents 'entry' 'entries'
 }
 
 dear_core_pass_grep() {

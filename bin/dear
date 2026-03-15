@@ -225,7 +225,7 @@ cmd_grep() {
 
 cmd_shelf() {
     echo "Your Shelf"
-    tree -nClL1 --noreport "${DEAR_JOURNAL_SHELF_DIR}" | tail -n+2
+    dear_core_private_tree "${DEAR_JOURNAL_SHELF_DIR}" 1
 }
 
 # Main loop ####################################################################
