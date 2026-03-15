@@ -226,9 +226,10 @@ fi
 
 # We're not parsing a regex, just matching against an arg
 # shellcheck disable=SC2076
-[[ ! ' shelf help ' =~ " $1 " ]] &&
-    DEAR_JOURNAL_DIR="${DEAR_JOURNAL_SHELF_DIR}/${1}" &&
+if [[ ! ' shelf help ' =~ " $1 " ]]; then
+    DEAR_JOURNAL_DIR="${DEAR_JOURNAL_SHELF_DIR}/${1}"
     shift
+fi
 
 declare cmd="$1"
 
