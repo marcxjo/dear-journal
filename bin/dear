@@ -1,8 +1,37 @@
 #!/usr/bin/env bash
 
-# Variables ####################################################################
-
 declare -r SCRIPT_NAME="${0##*/}"
+
+# Dependencies #################################################################
+
+require() {
+    local -r dependency_name="$1"
+    local -r cmd_variable="${dependency_name^^}_CMD"
+
+    # Let users supply their own overrides for commands
+    [ "${!cmd_variable:+x}" == "x" ] && return
+
+    local dependency_fqp
+
+    if ! dependency_fqp="$(type -P "$dependency_name" 2>/dev/null)"; then
+        echo "Error: dependency $dependency_name is not installed"
+        echo "$SCRIPT_NAME cannot run without this, exiting now"
+        # I normally don't like exiting within a function, but we have no reason
+        # to continue if we're missing runtime dependencies
+        # Also, this is just a cool pattern - feels much like modern programming
+        # language dependency management
+        exit 1
+    fi
+
+    # Set a variable that allows us to conveniently invoke the command by its
+    # full path
+    printf -v "${cmd_variable}" '%s' "$dependency_fqp"
+}
+
+require pass #PASS_CMD
+require tree #TREE_CMD
+
+# Variables ####################################################################
 
 # TODO: Not yet supported
 # This is where we'll add libraries that extend the default journal features,
