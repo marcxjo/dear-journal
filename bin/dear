@@ -12,12 +12,8 @@ declare -r DEAR_JOURNAL_LIB_DIR="${DEAR_JOURNAL_LIB_DIR:-${HOME}/.local/lib/dear
 # shellcheck source=../lib/core.sh
 [ -f "${DEAR_JOURNAL_LIB_DIR}/core.sh" ] && . "${DEAR_JOURNAL_LIB_DIR}/core.sh"
 
-declare CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
-
 # The directory where all journals managed by `dear` are stored
-declare -r DEAR_JOURNAL_SHELF_DIR="${DEAR_JOURNAL_SHELF_DIR:-${CONFIG_HOME%/}/dear}"
-
-unset CONFIG_HOME
+declare -r DEAR_JOURNAL_SHELF_DIR="${DEAR_JOURNAL_SHELF_DIR:-${XDG_CONFIG_HOME:-${HOME}/.config}/dear}"
 
 declare DEAR_JOURNAL_DIR
 
