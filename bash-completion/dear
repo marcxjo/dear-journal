@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+source /usr/share/bash-completion/completions/pass
+
+_dear() {
+  COMPREPLY=()
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  local prev
+  local prefix="${DEAR_JOURNAL_SHELF_DIR:-${XDG_CONFIG_HOME:-${HOME}/.config}/dear}"
+  local journal_name
+  local journal_path
+
+  local -ar arg1_cmds=('shelf' 'help')
+  local -ar arg2_cmds=('create' 'init' 'new' 'edit' 'ls' 'grep')
+
+  case ${COMP_CWORD} in
+  1)
+    COMPREPLY+=($(compgen -W "${arg1_cmds[*]}" "$cur"))
+    readarray -t journals < <(compgen -d "${prefix%/}/${cur}")
+    for item in "${journals[@]}"; do
+      COMPREPLY+=("${item#"${prefix%/}"/}")
+    done
+    unset journals
+    ;;
+  2)
+    prev="${COMP_WORDS[1]}"
+
+    # We're not parsing a regex, just matching against an arg
+    # shellcheck disable=SC2076
+    [[ ! " ${arg1_cmds[*]} " =~ " $prev " ]] &&
+      COMPREPLY+=($(compgen -W "${arg2_cmds[*]}" "$cur"))
+    ;;
+  3)
+    prev="${COMP_WORDS[2]}"
+
+    # pass expects the first arg to be a verb, so we have to fake the input
+    # to its completion routine to look like it's been called directly, with
+    # the store directory passed in as an envar
+    # Yes, this is absolutely filthy
+    case "$prev" in
+    'create' | 'init')
+      local -a old_cmd_intro=("${COMP_WORDS[@]:0:3}")
+      local old_cmd_intro_str="${old_cmd_intro[*]}"
+      local -a new_cmd_intro=('pass' 'init')
+      local new_cmd_intro_str="${new_cmd_intro[*]}"
+
+      journal_name="${COMP_WORDS[1]}"
+      journal_path="${prefix%/}/${journal_name}"
+      COMP_WORDS=("${new_cmd_intro[@]}" "${COMP_WORDS[@]:3}")
+      COMP_LINE="${COMP_WORDS[*]}"
+      COMP_CWORD=$((COMP_CWORD - 1))
+      COMP_POINT=$((COMP_POINT - ${#old_cmd_intro_str} + ${#new_cmd_intro_str}))
+      PASSWORD_STORE_DIR="${journal_path}" _pass
+      ;;
+    'ls' | 'grep' | 'edit')
+      local -a old_cmd_intro=("${COMP_WORDS[@]:0:2}")
+      local old_cmd_intro_str="${old_cmd_intro[*]}"
+      local -a new_cmd_intro=('pass')
+      local new_cmd_intro_str="${new_cmd_intro[*]}"
+
+      journal_name="${COMP_WORDS[1]}"
+      journal_path="${prefix%/}/${journal_name}"
+      COMP_WORDS=("${new_cmd_intro[@]}" "${COMP_WORDS[@]:2}")
+      COMP_LINE="${COMP_WORDS[*]}"
+      COMP_CWORD=$((COMP_CWORD - 1))
+      COMP_POINT=$((COMP_POINT - ${#old_cmd_intro_str} + ${#new_cmd_intro_str}))
+      PASSWORD_STORE_DIR="${journal_path}" _pass
+      ;;
+    'shelf' | 'help') ;;
+    esac
+    ;;
+  esac
+}
+
+complete -o filenames -F _dear dear
