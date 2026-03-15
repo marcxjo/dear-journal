@@ -18,7 +18,7 @@ dear_core_private_tree() {
 }
 
 dear_core_private_pass() {
-  PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" pass "$@"
+  PASSWORD_STORE_DIR="$DEAR_JOURNAL_DIR" "$PASS_CMD" "$@"
 }
 
 dear_core_private_pass_ls_to_depth() {
