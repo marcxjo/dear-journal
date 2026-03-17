@@ -85,7 +85,7 @@ dear_core_private_pass_ls_to_depth() {
       # We're on an item above summarizing depth
       printf '%s\n' "$line"
     fi
-  done <<<"$(dear_core_private_pass 'ls' "$entry_path" | tail -n+2)"
+  done < <(dear_core_private_pass 'ls' "$entry_path" | tail -n+2)
 
   # If our last directory contains entries, we will not have already emitted
   # output to indicate this, so we check one last time to determine whether we
