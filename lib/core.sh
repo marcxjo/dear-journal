@@ -100,11 +100,17 @@ dear_core_private_pass_ls_to_depth() {
 # Public API ###################################################################
 
 dear_core_pass_init() {
-  if dear_core_private_pass init "$@" 2>/dev/null; then
-    return
-  fi
+  while IFS='' read -r line; do
+    if [[ "$line" =~ "Password store" ]]; then
+      printf '%s\n' "${line/Password store/Journal}"
+    fi
+  done < <(dear_core_private_pass init "$@" 2>/dev/null)
 
-  return 1
+  # Capture the status of the `pass` command so that we can alert the user if it
+  # fails
+  wait $!
+
+  return $?
 }
 
 dear_core_pass_edit() {
