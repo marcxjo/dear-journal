@@ -23,12 +23,9 @@ dear_core_private_pass() {
 
 dear_core_private_pass_ls_to_depth() {
   local -r entry_path="$1"
-  local -r tree_header="$2"
-  local -ri max_dir_depth=$3
-  local -r summary_descriptor_singular="$4"
-  local -r summary_descriptor_plural="$5"
-
-  echo "$tree_header"
+  local -ri max_dir_depth=$2
+  local -r summary_descriptor_singular='entry'
+  local -r summary_descriptor_plural='entries'
 
   # Counts the entries under a given directory at summarizing depth
   local -i summarized_count=0
@@ -121,10 +118,9 @@ dear_core_pass_edit() {
 
 dear_core_pass_ls() {
   local -r entry_path="$1"
-  local -r tree_header="$2"
-  local -ri num_indents=$3
+  local -ri num_indents=$2
 
-  dear_core_private_pass_ls_to_depth "$entry_path" "$tree_header" $num_indents 'entry' 'entries'
+  dear_core_private_pass_ls_to_depth "$entry_path" $num_indents
 }
 
 dear_core_pass_grep() {

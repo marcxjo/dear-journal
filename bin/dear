@@ -216,7 +216,9 @@ cmd_ls() {
         return 1
     fi
 
-    dear_core_pass_ls "$entry_path" "$tree_header" $num_indents
+    echo "$tree_header"
+
+    dear_core_pass_ls "$entry_path" $num_indents
 }
 
 cmd_grep() {
